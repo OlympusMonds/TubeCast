@@ -22,7 +22,6 @@ def download_audio(url, output_folder):
             }],
         'progress_hooks': [my_hook],
         'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
-        'writedescription': True,
         'writeinfojson': True,
         'writethumbnail': True,
         'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder = output_folder)
@@ -137,7 +136,10 @@ def generate_rss(storage_dir):
             rssfile.write(fg.rss_str(pretty = True))
     except IOError as ioe:
         sys.exit("Error writing RSS file:\n{}".format(ioe))
-    
+    except UnicodeEncodeError as uee:
+        print ("Error writing RSS file - there was a unicode encoding error. Computer says:\n"
+               "{uee}\nHere is what it was trying to do:\n{rss}").format(uee = uee, rss = fg.rss_str(pretty = True))
+
     # TODO: Also pickle this object? May be able to just add?
 
 
