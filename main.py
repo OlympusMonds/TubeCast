@@ -105,42 +105,43 @@ def generate_rss(storage_dir):
     mp3_files = glob("{storage_dir}/*{extension_to_find}".format(storage_dir = storage_dir,
                                                                  extension_to_find = extension_to_find))
 
-    fg = FeedGenerator()
-    fg.load_extension("podcast")
+    if len(mp3_files) > 1:
+        fg = FeedGenerator()
+        fg.load_extension("podcast")
 
-    fg.id("http://localhost/tubecast/{channel}".format(channel = channel))
-    fg.title("{channel} - TubeCast".format(channel = channel))
-    fg.author( {"name" : channel, "email": "n@a.com"} )
-    fg.logo("http://localhost/tubecast/{channel}/pic.jpg")
-    fg.subtitle('This is a cool feed!')
-    fg.link( href='http://localhost/tubecast/file.rss', rel='self' )
-    fg.language('en')
-    
-    for mp3 in mp3_files:
-        filename_without_ext = os.path.splitext(mp3)[0]
-        try:
-            with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
-                vid_data = json.load(info)
-        except Exception as e:
-            # TODO: improve this..
-            sys.exit("ERROR reading json file:\n{}".format(e))
+        fg.id("http://localhost/tubecast/{channel}".format(channel = channel))
+        fg.title("{channel} - TubeCast".format(channel = channel))
+        fg.author( {"name" : channel, "email": "n@a.com"} )
+        fg.logo("http://localhost/tubecast/{channel}/pic.jpg")
+        fg.subtitle('This is a cool feed!')
+        fg.link( href='http://localhost/tubecast/file.rss', rel='self' )
+        fg.language('en')
         
-        fe = fg.add_entry()
-        fe.id("http://localhost/tubecast/{mp3}".format(mp3 = mp3))
-        fe.title(vid_data["fulltitle"])
-        fe.description(vid_data["description"])
-        fe.enclosure("http://localhost/tubecast/{mp3}".format(mp3 = mp3), 0, "audio/mpeg")
+        for mp3 in mp3_files:
+            filename_without_ext = os.path.splitext(mp3)[0]
+            try:
+                with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
+                    vid_data = json.load(info)
+            except Exception as e:
+                # TODO: improve this..
+                sys.exit("ERROR reading json file:\n{}".format(e))
+            
+            fe = fg.add_entry()
+            fe.id("http://localhost/tubecast/{mp3}".format(mp3 = mp3))
+            fe.title(vid_data["fulltitle"])
+            fe.description(vid_data["description"])
+            fe.enclosure("http://localhost/tubecast/{mp3}".format(mp3 = mp3), 0, "audio/mpeg")
 
-    try:
-        with open("{storage_dir}/feed.rss".format(storage_dir = storage_dir), "wb") as rssfile:
-            rssfile.write(fg.rss_str(pretty = True))
-    except IOError as ioe:
-        sys.exit("Error writing RSS file:\n{}".format(ioe))
-    except UnicodeEncodeError as uee:
-        print ("Error writing RSS file - there was a unicode encoding error. Computer says:\n"
-               "{uee}\nHere is what it was trying to do:\n{rss}").format(uee = uee, rss = fg.rss_str(pretty = True))
+        try:
+            with open("{storage_dir}/feed.rss".format(storage_dir = storage_dir), "wb") as rssfile:
+                rssfile.write(fg.rss_str(pretty = True))
+        except IOError as ioe:
+            sys.exit("Error writing RSS file:\n{}".format(ioe))
+        except UnicodeEncodeError as uee:
+            print ("Error writing RSS file - there was a unicode encoding error. Computer says:\n"
+                   "{uee}\nHere is what it was trying to do:\n{rss}").format(uee = uee, rss = fg.rss_str(pretty = True))
 
-    # TODO: Also pickle this object? May be able to just add?
+        # TODO: Also pickle this object? May be able to just add?
 
 
 def read_videos_to_download(filename = "Videos to download.txt"):
@@ -162,6 +163,8 @@ if __name__ == "__main__":
     # - Don't forget Windows! the / is diff
     # - Do the RSS check FIRST, then DL, then update the RSS again?
     #   - This is good for big downloads, but how common is that?
+    # - The RSS generator currently runs after each channel - it may be better
+    #   to make it run after ALL of them, so you can pass their file names to... something?
 
     for vid in read_videos_to_download():
         vd = process_video_info(vid)
