@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 import os, sys
+from glob import glob
+import json
 
 import youtube_dl
-
+from youtube_dl import DownloadError
 from feedgen.feed import FeedGenerator
 
 def download_audio(url, output_folder):
@@ -31,42 +33,56 @@ def download_audio(url, output_folder):
 
 
 def get_video_info(url):
-
-    with youtube_dl.YoutubeDL() as ydl:
-        vid_data = ydl.extract_info(url, download = False)
-
-    return vid_data
-
-
-def process_video_info(url):
-    vid_data = get_video_info(url)
-    videos = []
+    """
+    Uses the YoutubeDL library to download only video info (not the vid itself).
+    Accepts vids or playlists. Videos return a different dict to playlists, so 
+    it's normalised a bit here
+    """
     try:
-        videos = vid_data["entries"]
+        with youtube_dl.YoutubeDL() as ydl:
+            vid_data = ydl.extract_info(url, download = False)
+    except DownloadError as dle:
+        print ("ERROR: Unable to download info for {url}. It will be skipped. "
+               "Here is some more info:\n{dle}".format(url = url, dle = dle))
+        return []
+
+    try:
+        videos = vid_data["entries"]  
+        # This assumes that "entries" is a surefire to way to know if we have a playlist or not.
+        # Could also use "=PL" in url?
     except KeyError:
         videos = [vid_data,]
 
+    return videos
+
+
+def make_folder_if_not_there(path):
+    try:
+        os.mkdir(path)
+    except OSError as ose:
+        if ose.errno != 17:  # File already exists
+            sys.exit("ERROR: {}".format(ose))
+
+
+def process_video_info(url, root_storage = "Downloads"):
+    # TODO: Refactor / rename this function. It has become the new main ATM!
+    videos = get_video_info(url)
+
+    if len(videos) < 1:
+        return
+    
+    # Initialise storage
+    make_folder_if_not_there(root_storage)
+    channel_folder = "{id}".format(id = videos[0]["uploader_id"])
+    storage_dir = "{root_storage}/{channel_folder}".format(root_storage = "Downloads", 
+                                                           channel_folder = channel_folder)
+    make_folder_if_not_there(storage_dir)
+
     for vid in videos:
-        channel_folder = "{id}".format(id = vid["uploader_id"])
-        storage_dir = "{root_storage}/{channel_folder}".format( root_storage = "Downloads",
-                                                                channel_folder = channel_folder)
-        try:
-            os.mkdir(storage_dir)
-        except OSError as ose:
-            if ose.errno != 17:  # File already exists
-                sys.exit("ERROR: {}".format(ose))
-
-        channel_info = {"uploader": vid["uploader"],
-                        "uploader_id": vid["uploader_id"],
-                       }
-
-        #with open("{storage_dir}/{name}.txt".format(storage_dir = storage_dir, name = vid["title"]), "wb") as vid_file:
-        #    vid_file.write(vid["id"])
-
         try:
             download_audio("https://www.youtube.com/watch?v={}".format(vid["id"]), storage_dir) 
-        except Exception as dle:
-            print dle
+        except DownloadError as dle:  # TODO: get the right exception class
+            print "ERROR downloading mp3 - skipping.\n{dle}".format(dle = dle)
         """
         TODO:
         Think if download_audio should be 1 level less indented. If so, ytdl would handle the seperate
@@ -74,23 +90,77 @@ def process_video_info(url):
         Then all vids would be put into the same folder. If it IS indented, it will put each vid into 
         it's own channel folder. Is that what you want..? Should this be an option?
         """
+    generate_rss(storage_dir)
 
 
-def run_rss_hosting_test():
+def generate_rss(storage_dir):
+    """
+    Generate an RSS feed based off the mp3s found in the storage_dir. We also expect to find
+    a .json file accompanying each mp3, which has all the details about the file.
+    """
+
+    # TODO: Check if pickled object is already around
+
+    channel = os.path.basename(storage_dir)
+    extension_to_find = ".mp3"
+    mp3_files = glob("{storage_dir}/*{extension_to_find}".format(storage_dir = storage_dir,
+                                                                 extension_to_find = extension_to_find))
+
     fg = FeedGenerator()
-    fg.id('http://lernfunk.de/media/654321')
-    fg.title('Some Testfeed')
-    fg.author( {'name':'John Doe','email':'john@example.de'} )
-    fg.link( href='http://example.com', rel='alternate' )
-    fg.logo('http://ex.com/logo.jpg')
+    fg.load_extension("podcast")
+
+    fg.id("http://localhost/tubecast/{channel}".format(channel = channel))
+    fg.title("{channel} - TubeCast".format(channel = channel))
+    fg.author( {"name" : channel, "email": "n@a.com"} )
+    fg.logo("http://localhost/tubecast/{channel}/pic.jpg")
     fg.subtitle('This is a cool feed!')
-    fg.link( href='http://larskiesow.de/test.atom', rel='self' )
+    fg.link( href='http://localhost/tubecast/file.rss', rel='self' )
     fg.language('en')
-    print fg.rss_str(pretty = True)
+    
+    for mp3 in mp3_files:
+        filename_without_ext = os.path.splitext(mp3)[0]
+        try:
+            with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
+                vid_data = json.load(info)
+        except Exception as e:
+            # TODO: improve this..
+            sys.exit("ERROR reading json file:\n{}".format(e))
+        
+        fe = fg.add_entry()
+        fe.id("http://localhost/tubecast/{mp3}".format(mp3 = mp3))
+        fe.title(vid_data["fulltitle"])
+        fe.description(vid_data["description"])
+        fe.enclosure("http://localhost/tubecast/{mp3}".format(mp3 = mp3), 0, "audio/mpeg")
+
+    try:
+        with open("{storage_dir}/feed.rss".format(storage_dir = storage_dir), "wb") as rssfile:
+            rssfile.write(fg.rss_str(pretty = True))
+    except IOError as ioe:
+        sys.exit("Error writing RSS file:\n{}".format(ioe))
+    
+    # TODO: Also pickle this object? May be able to just add?
+
+
+def read_videos_to_download(filename = "Videos to download.txt"):
+    """
+    Reads a simple text file with a list of YT urls to videos OR playlists.
+    Each line is read in, and added to a list. Lines starting with # are ignored.
+    """
+    try:
+        with open(filename, 'r') as vids_to_dl_file:
+            vids_to_dl = [ line for line in vids_to_dl_file if not line.startswith("#")]
+    except IOError as ioe:
+        sys.exit("ERROR reading {filename} to find videos to download:\n{ioe}".format(filename = filename,
+                                                                                      ioe = ioe))
+    return vids_to_dl
+
 
 if __name__ == "__main__":
-    url = 'http://www.youtube.com/watch?v=i2fBIUUWRb8'
-    vd = process_video_info(url)
+    # TODO:
+    # - Don't forget Windows! the / is diff
+    # - Do the RSS check FIRST, then DL, then update the RSS again?
+    #   - This is good for big downloads, but how common is that?
 
-    vd = process_video_info('https://www.youtube.com/watch?v=KigIN8BpXk8&list=PLu9l40IymKw-vvGMrd5U-fcimrVjv-9c6')
+    for vid in read_videos_to_download():
+        vd = process_video_info(vid)
 
