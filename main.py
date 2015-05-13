@@ -5,7 +5,7 @@ import youtube_dl
 
 from feedgen.feed import FeedGenerator
 
-def run_yt_test(url):
+def download_audio(url, output_folder):
 
     def my_hook(d):
         if d["status"] == "finished":
@@ -19,19 +19,16 @@ def run_yt_test(url):
             'preferredquality': '192',
             }],
         'progress_hooks': [my_hook],
-        'outtmpl': 'Downloads/%(uploader)s - %(title)s - %(id)s.%(ext)s',
+        'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
         'writedescription': True,
         'writeinfojson': True,
         'writethumbnail': True,
+        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder = output_folder)
         }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        vid_data = ydl.extract_info(url, download = False)
-        for key in vid_data.keys():
-            print key
+        ydl.download([url])
 
-        print vid_data["description"]
-        #ydl.download([url])
 
 def get_video_info(url):
 
@@ -39,6 +36,7 @@ def get_video_info(url):
         vid_data = ydl.extract_info(url, download = False)
 
     return vid_data
+
 
 def process_video_info(url):
     vid_data = get_video_info(url)
@@ -62,11 +60,21 @@ def process_video_info(url):
                         "uploader_id": vid["uploader_id"],
                        }
 
-        with open("{storage_dir}/{name}.txt".format(storage_dir = storage_dir, name = vid["title"]), "wb") as vid_file:
-            vid_file.write("Hello")
+        #with open("{storage_dir}/{name}.txt".format(storage_dir = storage_dir, name = vid["title"]), "wb") as vid_file:
+        #    vid_file.write(vid["id"])
 
-        #for i in vid_data:
-        #    print i
+        try:
+            download_audio("https://www.youtube.com/watch?v={}".format(vid["id"]), storage_dir) 
+        except Exception as dle:
+            print dle
+        """
+        TODO:
+        Think if download_audio should be 1 level less indented. If so, ytdl would handle the seperate
+        video downloads automatically - but what if it's a custom playlist, with multiple channels?
+        Then all vids would be put into the same folder. If it IS indented, it will put each vid into 
+        it's own channel folder. Is that what you want..? Should this be an option?
+        """
+
 
 def run_rss_hosting_test():
     fg = FeedGenerator()
