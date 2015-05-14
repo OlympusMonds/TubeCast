@@ -7,6 +7,7 @@ import youtube_dl
 from youtube_dl import DownloadError
 from feedgen.feed import FeedGenerator
 
+
 def make_folder_if_not_there(path):
     """
     Attempts to make a folder if one is not already there
@@ -71,7 +72,11 @@ def download_audio(url, output_folder):
 
 
 def get_audio_into_storage(url, root_storage = "Downloads"):
-    # TODO: Refactor / rename this function. It has become the new main ATM!
+    """
+    The main function to get audo from YT. Takes a YT URL (that YoutubeDL would accept), and
+    a download location. This function then gets the info about the vid, makes an appropriate
+    folder, and then downloads the relevant stuff into the download folder.
+    """
     videos = get_video_info(url)
 
     if len(videos) < 1:
@@ -96,6 +101,7 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
         Then all vids would be put into the same folder. If it IS indented, it will put each vid into 
         it's own channel folder. Is that what you want..? Should this be an option?
         """
+
 
 def generate_rss(root_storage):
     """
