@@ -14,4 +14,4 @@ The main dependencies are:
 # TODO
  - Flask is probably the easiest web-hoster for the RSS feed.
 
-
+[![Code Issues](http://www.quantifiedcode.com/api/v1/project/c52e5b9ea3c84088836765c076a196f6/badge.svg)](http://www.quantifiedcode.com/app/project/c52e5b9ea3c84088836765c076a196f6)
