@@ -7,28 +7,15 @@ import youtube_dl
 from youtube_dl import DownloadError
 from feedgen.feed import FeedGenerator
 
-def download_audio(url, output_folder):
-
-    def my_hook(d):
-        if d["status"] == "finished":
-            print "Done downloading, now converting..."
-
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-            }],
-        'progress_hooks': [my_hook],
-        'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
-        'writeinfojson': True,
-        'writethumbnail': True,
-        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder = output_folder)
-        }
-
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+def make_folder_if_not_there(path):
+    """
+    Attempts to make a folder if one is not already there
+    """
+    try:
+        os.mkdir(path)
+    except OSError as ose:
+        if ose.errno != 17:  # File already exists
+            sys.exit("ERROR: {}".format(ose))
 
 
 def get_video_info(url):
@@ -55,15 +42,35 @@ def get_video_info(url):
     return videos
 
 
-def make_folder_if_not_there(path):
-    try:
-        os.mkdir(path)
-    except OSError as ose:
-        if ose.errno != 17:  # File already exists
-            sys.exit("ERROR: {}".format(ose))
+def download_audio(url, output_folder):
+    """
+    Uses the YouTubeDL library to actually download the vid and convert
+    to mp3. Output naming format is defined here, and cache name.
+    """
+
+    def my_hook(d):
+        if d["status"] == "finished":
+            print "Done downloading, now converting..."
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+            }],
+        'progress_hooks': [my_hook],
+        'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
+        'writeinfojson': True,
+        'writethumbnail': True,
+        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder = output_folder)
+        }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
 
 
-def process_video_info(url, root_storage = "Downloads"):
+def get_audio_into_storage(url, root_storage = "Downloads"):
     # TODO: Refactor / rename this function. It has become the new main ATM!
     videos = get_video_info(url)
 
@@ -89,10 +96,18 @@ def process_video_info(url, root_storage = "Downloads"):
         Then all vids would be put into the same folder. If it IS indented, it will put each vid into 
         it's own channel folder. Is that what you want..? Should this be an option?
         """
-    generate_rss(storage_dir)
+
+def generate_rss(root_storage):
+    """
+    Check the root storage folder for channels, and make RSS feeds for all of them
+    """
+    channels = sorted(glob("{root_storage}/*".format(root_storage = root_storage)))
+
+    feeds = [generate_channel_rss(channel) for channel in channels if os.path.isdir(channel)]
+    return feeds
 
 
-def generate_rss(storage_dir):
+def generate_channel_rss(storage_dir):
     """
     Generate an RSS feed based off the mp3s found in the storage_dir. We also expect to find
     a .json file accompanying each mp3, which has all the details about the file.
@@ -105,7 +120,10 @@ def generate_rss(storage_dir):
     mp3_files = glob("{storage_dir}/*{extension_to_find}".format(storage_dir = storage_dir,
                                                                  extension_to_find = extension_to_find))
 
-    if len(mp3_files) > 1:
+    if len(mp3_files) < 1:
+        print "Skipping channel {channel} - no mp3s found.".format(channel = channel)
+        return ""
+    else:
         fg = FeedGenerator()
         fg.load_extension("podcast")
 
@@ -132,9 +150,9 @@ def generate_rss(storage_dir):
             fe.description(vid_data["description"])
             fe.enclosure("http://localhost/tubecast/{mp3}".format(mp3 = mp3), 0, "audio/mpeg")
 
+        rss_filename = "{storage_dir}/feed.rss".format(storage_dir = storage_dir)
         try:
-            with open("{storage_dir}/feed.rss".format(storage_dir = storage_dir), "wb") as rssfile:
-                rssfile.write(fg.rss_str(pretty = True))
+            fg.rss_file(rss_filename)
         except IOError as ioe:
             sys.exit("Error writing RSS file:\n{}".format(ioe))
         except UnicodeEncodeError as uee:
@@ -142,6 +160,7 @@ def generate_rss(storage_dir):
                    "{uee}\nHere is what it was trying to do:\n{rss}").format(uee = uee, rss = fg.rss_str(pretty = True))
 
         # TODO: Also pickle this object? May be able to just add?
+        return rss_filename
 
 
 def read_videos_to_download(filename = "Videos to download.txt"):
@@ -161,11 +180,10 @@ def read_videos_to_download(filename = "Videos to download.txt"):
 if __name__ == "__main__":
     # TODO:
     # - Don't forget Windows! the / is diff
-    # - Do the RSS check FIRST, then DL, then update the RSS again?
-    #   - This is good for big downloads, but how common is that?
-    # - The RSS generator currently runs after each channel - it may be better
-    #   to make it run after ALL of them, so you can pass their file names to... something?
 
-    for vid in read_videos_to_download():
-        vd = process_video_info(vid)
+    root_storage = "Downloads"
 
+    #for vid in read_videos_to_download():
+    #    vd = get_audio_into_storage(vid)
+
+    print generate_rss(root_storage)
