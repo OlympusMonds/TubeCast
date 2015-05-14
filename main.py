@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     root_storage = "Downloads"
 
-    #for vid in read_videos_to_download():
-    #    vd = get_audio_into_storage(vid)
+    for vid in read_videos_to_download():
+        vd = get_audio_into_storage(vid)
 
     print generate_rss(root_storage)
