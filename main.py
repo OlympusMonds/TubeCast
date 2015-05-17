@@ -7,6 +7,8 @@ import youtube_dl
 from youtube_dl import DownloadError
 from feedgen.feed import FeedGenerator
 
+from tubecast_host import run_webhost_for_feeds
+
 
 def make_folder_if_not_there(path):
     """
@@ -192,4 +194,4 @@ if __name__ == "__main__":
     for vid in read_videos_to_download():
         vd = get_audio_into_storage(vid)
 
-    print generate_rss(root_storage)
+    run_webhost_for_feeds()
