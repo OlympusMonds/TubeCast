@@ -10,11 +10,9 @@ try:
 except pkg_resources.DistributionNotFound as dnfe:
     sys.exit("ERROR - You need the python package '{package}' to use TubeCast.".format(package = dnfe))
 
-from flask import Flask, url_for, redirect
-
 from tubecast_youtube import get_video_info, download_audio
 from tubecast_rss import generate_rss
-#from tubecast_host import run_webhost_for_feeds
+from tubecast_host import start_rss_host
 
 
 def read_videos_to_download(filename = "Videos to download.txt"):
@@ -78,14 +76,12 @@ if __name__ == "__main__":
 
     root_storage = "Downloads"
 
+    # Do the Youtube stuff
     for vid in read_videos_to_download():
-        vd = get_audio_into_storage(vid)
+        vd = get_audio_into_storage(vid, root_storage)
 
-   
+    # Do the RSS stuff
     feeds = generate_rss(root_storage)    
     
-    
-    #tubecast_host = Flask(__name__)
-    #tubecast_host.debug = debug
-    #tubecast_host.run()
-
+    # Do the web hosting stuff
+    start_rss_host(root_storage, feeds)
