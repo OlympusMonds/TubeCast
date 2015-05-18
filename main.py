@@ -4,9 +4,6 @@ from glob import glob
 import json
 import pkg_resources
 
-"""
-Check for import issues
-"""
 try:
     pkg_resources.get_distribution("youtube_dl")
     pkg_resources.get_distribution("feedgen")
