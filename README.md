@@ -9,9 +9,10 @@ I would recommend you look to see if the creator you're TubeCasting has a Patreo
 The main dependencies are:
  - YoutubeDL - https://github.com/rg3/youtube-dl
  - FeedGenerator - http://lkiesow.github.io/python-feedgen/
+ - Flask - https://github.com/mitsuhiko/flask
 
 
 # TODO
- - Flask is probably the easiest web-hoster for the RSS feed.
+ - Get Flask to have a state (or just make it search the filesystem all the time...)
 
 [![Code Issues](http://www.quantifiedcode.com/api/v1/project/c52e5b9ea3c84088836765c076a196f6/badge.svg)](http://www.quantifiedcode.com/app/project/c52e5b9ea3c84088836765c076a196f6)
