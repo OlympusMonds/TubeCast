@@ -2,10 +2,21 @@ from __future__ import unicode_literals
 import os, sys
 from glob import glob
 import json
+import pkg_resources
+
+"""
+Check for import issues
+"""
+try:
+    pkg_resources.get_distribution("youtube_dl")
+    pkg_resources.get_distribution("feedgen")
+except pkg_resources.DistributionNotFound as dnfe:
+    sys.exit("ERROR - You need the python package '{package}' to use TubeCast.".format(package = dnfe))
 
 import youtube_dl
 from youtube_dl import DownloadError
 from feedgen.feed import FeedGenerator
+
 
 from tubecast_host import run_webhost_for_feeds
 
