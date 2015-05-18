@@ -10,7 +10,7 @@ class TubeCastRSSHost():
         self.root_storage = root_storage
 
     
-    def update_feed_paths():
+    def update_feed_paths(self):
         self.feed_paths = []
         for channel in sorted(glob("{root_storage}/*".format(root_storage = self.root_storage))):
             if os.path.isdir(channel):
@@ -19,7 +19,7 @@ class TubeCastRSSHost():
 
 
     @property
-    def feeds():
+    def feeds(self):
         return self.feed_paths
 
 
