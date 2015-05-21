@@ -10,9 +10,11 @@ def generate_rss(root_storage):
     Check the root storage folder for channels, and make RSS feeds for all of them
     """
     channels = sorted(glob("{root_storage}/*".format(root_storage = root_storage)))
-
     feeds = [generate_channel_rss(channel) for channel in channels if os.path.isdir(channel)]
-    return feeds
+
+    nice_feeds = {os.path.basename(pretty_channel) : feed_url for pretty_channel, feed_url in zip(channels, feeds)}
+
+    return nice_feeds
 
 
 def generate_channel_rss(storage_dir):

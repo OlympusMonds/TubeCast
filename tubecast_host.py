@@ -3,24 +3,34 @@ import os
 
 from flask import Flask, url_for, redirect
 
-class TubeCastRSSHost():
+tch_flask = Flask(__name__)
 
+class TubeCastRSSHost():
+    """
+    This class is designed to be a persistent in-memory db of all
+    rss feeds available. When it starts up, you can pass it a list
+    of feeds, but if needed it can update by scanning the file 
+    structure.
+    """
+    
     def __init__(self, root_storage, feed_paths):
         self.feed_paths = feed_paths
         self.root_storage = root_storage
 
     
     def update_feed_paths(self):
-        self.feed_paths = []
+        self.feed_paths = {}
         for channel in sorted(glob("{root_storage}/*".format(root_storage = self.root_storage))):
             if os.path.isdir(channel):
                 if os.path.isfile("{channel}/feed.rss".format(channel = channel)):
-                    self.feed_paths.append("{channel}/feed.rss".format(channel = channel))
+                    pretty_channel = os.path.basename(channel)
+                    self.feed_paths[pretty_channel] = "{channel}/feed.rss".format(channel = channel)
 
 
     @property
     def feeds(self):
         return self.feed_paths
+
 
 
 @tch_flask.route("/feed/<feedname>")
@@ -32,6 +42,7 @@ def show_feed(feedname):
 
 @tch_flask.route("/feeds/update")
 def update_feeds():
+    tch_flask.config["TubeCastRSSHost"].update_feed_paths()
     return redirect(url_for("show_feeds"))
 
 
@@ -41,17 +52,16 @@ def show_feeds():
     Get a list of channels with feeds (by scanning the folders), and display a simple
     list on a page
     """
+    feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
     text = ["Channel feeds available:",]
-    for channel in feed_paths:
-        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a>".format(channel = os.path.basename(channel)))
+    for channel, feed_url in feed_paths.iteritems():
+        text.append("<a href=\"/feed/{feed_url}\">  - {channel}  </a>".format(feed_url = feed_url, channel = channel))
     text.append("<a href=\"/feeds/update\">Update feeds</a>")
     return "<br \>".join(text)
                   
 
 def start_rss_host(root_storage, feed_paths):
-    tch_flask = Flask(__name__)
     tch_flask.debug = True
-
-    tc_rss_host = TubeCastRSSHost(root_storage, feed_paths)
+    tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
 
     tch_flask.run()
