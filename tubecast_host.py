@@ -1,5 +1,6 @@
 from glob import glob
 import os
+from collections import OrderedDict
 
 from flask import Flask, url_for, redirect, send_from_directory
 
@@ -22,7 +23,7 @@ class TubeCastRSSHost():
 
     
     def update_feed_paths(self):
-        self.feed_paths = {}
+        self.feed_paths = OrderedDict()
         for channel in sorted(glob("{root_storage}/*".format(root_storage = self.root_storage))):
             if os.path.isdir(channel):
                 if os.path.isfile("{channel}/feed.rss".format(channel = channel)):
@@ -36,15 +37,22 @@ class TubeCastRSSHost():
 
 
 
+@tch_flask.route("/feed/<feedname>/<filename>")
+def get_file(feedname, filename):
+    feed_names = tch_flask.config["TubeCastRSSHost"].feeds
+    root_storage = tch_flask.config["root_storage"]
+    if feedname in feed_names.keys():
+        if filename.endswith(("jpg", "mp3")):
+            return send_from_directory("{root_storage}/{channel}".format(root_storage = root_storage, channel = feedname), filename)
+    else:
+        return redirect(url_for("show_feeds"))
+
 @tch_flask.route("/feed/<feedname>")
 def show_feed(feedname):
     feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
     rss_filename = "feed.rss"
     rss_path = os.path.dirname(feed_paths[feedname])
     return send_from_directory(rss_path, rss_filename, as_attachment = True, attachment_filename=rss_filename)
-
-    #return "This is the feed for {}".format(feedname)
-    #return "Feed: {feedname}".format(feedname = feedname)
 
 
 @tch_flask.route("/feeds/update")
@@ -70,5 +78,6 @@ def show_feeds():
 def start_rss_host(root_storage, feed_paths):
     tch_flask.debug = True
     tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
+    tch_flask.config["root_storage"] = root_storage
 
     tch_flask.run(host='0.0.0.0')

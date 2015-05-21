@@ -2,22 +2,39 @@ from glob import glob
 import os
 import sys
 import json
+from collections import OrderedDict
+
 from feedgen.feed import FeedGenerator
+
+import socket
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("gmail.com",80))
+        ip = s.getsockname()[0]
+        s.close()
+    except Exception as e:  # TODO find better exception
+        sys.exit(e)
+    return ip
 
 
 def generate_rss(root_storage):
     """
     Check the root storage folder for channels, and make RSS feeds for all of them
     """
+    ip = get_local_ip()
+    ip = "{}:5000".format(ip)
     channels = sorted(glob("{root_storage}/*".format(root_storage = root_storage)))
-    feeds = [generate_channel_rss(channel) for channel in channels if os.path.isdir(channel)]
+    feeds = [generate_channel_rss(channel, ip) for channel in channels if os.path.isdir(channel)]
 
-    nice_feeds = {os.path.basename(pretty_channel) : feed_url for pretty_channel, feed_url in zip(channels, feeds)}
+    nice_feeds = OrderedDict()
+    for pretty_channel, feed_url in zip(channels, feeds):
+        nice_feeds[os.path.basename(pretty_channel)] = feed_url 
 
     return nice_feeds
 
 
-def generate_channel_rss(storage_dir):
+def generate_channel_rss(storage_dir, ip):
     """
     Generate an RSS feed based off the mp3s found in the storage_dir. We also expect to find
     a .json file accompanying each mp3, which has all the details about the file.
@@ -37,16 +54,18 @@ def generate_channel_rss(storage_dir):
         fg = FeedGenerator()
         fg.load_extension("podcast")
 
-        fg.id("http://localhost/tubecast/{channel}".format(channel = channel))
+        fg.id("http://{ip}/feed/{channel}".format(ip = ip, channel = channel))
         fg.title("{channel} - TubeCast".format(channel = channel))
         fg.author( {"name" : channel, "email": "n@a.com"} )
-        fg.logo("http://localhost/tubecast/{channel}/pic.jpg")
+        fg.logo("http://{ip}/feed/{channel}/pic.jpg".format(ip = ip, channel = channel))
         fg.subtitle('This is a cool feed!')
-        fg.link( href='http://localhost/tubecast/file.rss', rel='self' )
+        fg.link( href='http://{ip}/feed/{channel}/feed.rss'.format(ip = ip, channel = channel), rel='self' )
         fg.language('en')
         
         for mp3 in mp3_files:
             filename_without_ext = os.path.splitext(mp3)[0]
+            base_mp3_filename = os.path.basename(mp3)
+            base_mp3_filename = base_mp3_filename.replace(" ", "%20")
             try:
                 with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
                     vid_data = json.load(info)
@@ -55,10 +74,10 @@ def generate_channel_rss(storage_dir):
                 sys.exit("ERROR reading json file:\n{}".format(e))
             
             fe = fg.add_entry()
-            fe.id("http://localhost/tubecast/{mp3}".format(mp3 = mp3))
+            fe.id("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename))
             fe.title(vid_data["fulltitle"])
             fe.description(vid_data["description"])
-            fe.enclosure("http://localhost/tubecast/{mp3}".format(mp3 = mp3), 0, "audio/mpeg")
+            fe.enclosure("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename), 0, "audio/mpeg")
 
         rss_filename = "{storage_dir}/feed.rss".format(storage_dir = storage_dir)
         try:
