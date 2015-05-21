@@ -1,9 +1,12 @@
 from glob import glob
 import os
 
-from flask import Flask, url_for, redirect
+from flask import Flask, url_for, redirect, send_from_directory
 
+
+# TODO: This seems like an enormous hack...
 tch_flask = Flask(__name__)
+
 
 class TubeCastRSSHost():
     """
@@ -35,8 +38,12 @@ class TubeCastRSSHost():
 
 @tch_flask.route("/feed/<feedname>")
 def show_feed(feedname):
-    return "This is the feed for {}".format(feedname)
-    #print url_for('static', filename="style.css")
+    feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
+    rss_filename = "feed.rss"
+    rss_path = os.path.dirname(feed_paths[feedname])
+    return send_from_directory(rss_path, rss_filename, as_attachment = True, attachment_filename=rss_filename)
+
+    #return "This is the feed for {}".format(feedname)
     #return "Feed: {feedname}".format(feedname = feedname)
 
 
@@ -55,7 +62,7 @@ def show_feeds():
     feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
     text = ["Channel feeds available:",]
     for channel, feed_url in feed_paths.iteritems():
-        text.append("<a href=\"/feed/{feed_url}\">  - {channel}  </a>".format(feed_url = feed_url, channel = channel))
+        text.append("<a href=\"/feed/{feed_url}\">  - {channel}  </a>".format(feed_url = channel, channel = channel))
     text.append("<a href=\"/feeds/update\">Update feeds</a>")
     return "<br \>".join(text)
                   
@@ -64,4 +71,4 @@ def start_rss_host(root_storage, feed_paths):
     tch_flask.debug = True
     tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
 
-    tch_flask.run()
+    tch_flask.run(host='0.0.0.0')
