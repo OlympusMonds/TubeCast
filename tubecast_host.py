@@ -44,8 +44,8 @@ def get_file(feedname, filename):
     if feedname in feed_names.keys():
         if filename.endswith(("jpg", "mp3")):
             return send_from_directory("{root_storage}/{channel}".format(root_storage = root_storage, channel = feedname), filename)
-    else:
-        return redirect(url_for("show_feeds"))
+    return redirect(url_for("show_feeds"))
+
 
 @tch_flask.route("/feed/<feedname>")
 def show_feed(feedname):

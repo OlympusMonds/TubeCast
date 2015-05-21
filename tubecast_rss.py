@@ -64,8 +64,9 @@ def generate_channel_rss(storage_dir, ip):
         
         for mp3 in mp3_files:
             filename_without_ext = os.path.splitext(mp3)[0]
-            base_mp3_filename = os.path.basename(mp3)
-            base_mp3_filename = base_mp3_filename.replace(" ", "%20")
+            base_mp3_filename = os.path.basename(mp3).replace(" ", "%20")
+            base_jpg_filename = os.path.basename(mp3.replace(".mp3", ".jpg"))
+
             try:
                 with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
                     vid_data = json.load(info)
@@ -78,6 +79,7 @@ def generate_channel_rss(storage_dir, ip):
             fe.title(vid_data["fulltitle"])
             fe.description(vid_data["description"])
             fe.enclosure("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename), 0, "audio/mpeg")
+            fe.podcast.itunes_image("http://{ip}/feed/{channel}/{base_jpg_filename}".format(ip = ip, channel = channel, base_jpg_filename = base_jpg_filename))
 
         rss_filename = "{storage_dir}/feed.rss".format(storage_dir = storage_dir)
         try:
