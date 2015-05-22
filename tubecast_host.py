@@ -21,7 +21,6 @@ class TubeCastRSSHost():
         self.feed_paths = feed_paths
         self.root_storage = root_storage
 
-    
     def update_feed_paths(self):
         self.feed_paths = OrderedDict()
         for channel in sorted(glob("{root_storage}/*".format(root_storage = self.root_storage))):
@@ -29,7 +28,6 @@ class TubeCastRSSHost():
                 if os.path.isfile("{channel}/feed.rss".format(channel = channel)):
                     pretty_channel = os.path.basename(channel)
                     self.feed_paths[pretty_channel] = "{channel}/feed.rss".format(channel = channel)
-
 
     @property
     def feeds(self):
@@ -43,7 +41,7 @@ def get_file(feedname, filename):
     root_storage = tch_flask.config["root_storage"]
     if feedname in feed_names.keys():
         if filename.endswith(("jpg", "mp3")):
-            return send_from_directory("{root_storage}/{channel}".format(root_storage = root_storage, channel = feedname), filename)
+            return send_from_directory("{root_storage}/{channel}".format(root_storage=root_storage, channel=feedname), filename)
     return redirect(url_for("show_feeds"))
 
 
