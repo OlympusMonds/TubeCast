@@ -1,0 +1,7 @@
+# Add the URLs of YouTube videos or playlists you want to TubeCast
+# e.g.: http://www.youtube.com/watch?v=i2fBIUUWRb8
+# They must be one per line, with no spaces, etc.
+http://www.youtube.com/watch?v=i2fBIUUWRb8
+https://www.youtube.com/watch?v=KigIN8BpXk8&list=PLu9l40IymKw-vvGMrd5U-fcimrVjv-9c
+https://www.youtube.com/watch?v=Ih1Q2DasYTQ&list=PLdjrwPDoXHLBWaxphJ3rrc_ToODgpRs
+#https://www.youtube.com/watch?v=AgFeZr5ptV8&list=RDAgFeZr5ptV8

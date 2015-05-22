@@ -24,6 +24,9 @@ def read_videos_to_download(filename = "Videos to download.txt"):
         with open(filename, 'r') as vids_to_dl_file:
             vids_to_dl = [ line for line in vids_to_dl_file if not line.startswith("#")]
     except IOError as ioe:
+        if ioe.errno == 2:
+            sys.exit(("You need to make a file called \"{filename}\" and put a list of YouTube URLs in it, "
+                      "one per line.\nIf you put a # at the start of a line, it will be ignored".format(filename=filename)))
         sys.exit("ERROR reading {filename} to find videos to download:\n{ioe}".format(filename = filename,
                                                                                       ioe = ioe))
     return vids_to_dl
