@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import os
 import youtube_dl
 from youtube_dl import DownloadError
 
@@ -7,7 +8,7 @@ def get_video_info(url):
     """
     Uses the YoutubeDL library to download only video info (not the vid itself).
     Accepts vids or playlists. Videos return a different dict to playlists, so 
-    it's normalised a bit here
+    it"s normalised a bit here
     """
     try:
         with youtube_dl.YoutubeDL() as ydl:
@@ -37,18 +38,20 @@ def download_audio(url, output_folder):
         if d["status"] == "finished":
             print "Done downloading, now converting..."
 
+    video_folder = os.path.join(output_folder, "%(id)s - %(title)s.%(ext)s")
+
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
+        "format": "bestaudio/best",
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
             }],
-        'progress_hooks': [my_hook],
-        'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
-        'writeinfojson': True,
-        'writethumbnail': True,
-        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder=output_folder)
+        "progress_hooks": [my_hook],
+        "outtmpl": "{}".format(video_folder),
+        "writeinfojson": True,
+        "writethumbnail": True,
+        "download_archive": os.path.join(output_folder, "downloaded_videos.txt"),
         }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:

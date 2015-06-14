@@ -19,12 +19,12 @@ def get_local_ip():
     return ip
 
 
-def generate_rss(root_storage, hostip = None, hostport = None):
+def generate_rss(root_storage, hostip = None, hostport = 8080):
     """
     Check the root storage folder for channels, and make RSS feeds for all of them
     """
     ip = get_local_ip() if hostip is None else hostip
-    ip = "{ip}:{port}".format(ip=ip, port=hostport) if hostport is None else ip
+    ip = "{ip}:{port}".format(ip=ip, port=hostport)
     
     channels = sorted(glob(os.path.join(root_storage, "*")))
     feeds = [generate_channel_rss(channel, ip) for channel in channels if os.path.isdir(channel)]
