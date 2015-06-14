@@ -56,8 +56,7 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
     # Initialise storage
     make_folder_if_not_there(root_storage)
     channel_folder = "{id}".format(id = videos[0]["uploader_id"])
-    storage_dir = "{root_storage}/{channel_folder}".format(root_storage = "Downloads", 
-                                                           channel_folder = channel_folder)
+    storage_dir = os.path.join(root_storage, channel_folder)
     make_folder_if_not_there(storage_dir)
 
     for vid in videos:
@@ -73,8 +72,6 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
 
 
 if __name__ == "__main__":
-    # TODO:
-    # - Don't forget Windows! the / is diff
 
     root_storage = "Downloads"
 

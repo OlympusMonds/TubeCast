@@ -3,10 +3,11 @@ import os
 import sys
 import json
 from collections import OrderedDict
+import socket
 
 from feedgen.feed import FeedGenerator
 
-import socket
+
 def get_local_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,15 +19,16 @@ def get_local_ip():
     return ip
 
 
-def generate_rss(root_storage):
+def generate_rss(root_storage, hostip = None, hostport = None):
     """
     Check the root storage folder for channels, and make RSS feeds for all of them
     """
-    ip = get_local_ip()
-    ip = "{}:5000".format(ip)
-    channels = sorted(glob("{root_storage}/*".format(root_storage = root_storage)))
+    ip = get_local_ip() if hostip is None else hostip
+    ip = "{ip}:{port}".format(ip=ip, port=hostport) if hostport is None else ip
+    
+    channels = sorted(glob(os.path.join(root_storage, "*")))
     feeds = [generate_channel_rss(channel, ip) for channel in channels if os.path.isdir(channel)]
-
+    
     nice_feeds = OrderedDict()
     for pretty_channel, feed_url in zip(channels, feeds):
         nice_feeds[os.path.basename(pretty_channel)] = feed_url 
@@ -44,8 +46,7 @@ def generate_channel_rss(storage_dir, ip):
 
     channel = os.path.basename(storage_dir)
     extension_to_find = ".mp3"
-    mp3_files = glob("{storage_dir}/*{extension_to_find}".format(storage_dir = storage_dir,
-                                                                 extension_to_find = extension_to_find))
+    mp3_files = glob(os.path.join(storage_dir, "*{}".format(extension_to_find)))
 
     if len(mp3_files) < 1:
         print "Skipping channel {channel} - no mp3s found.".format(channel = channel)
@@ -71,7 +72,7 @@ def generate_channel_rss(storage_dir, ip):
                 with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
                     vid_data = json.load(info)
             except Exception as e:
-                # TODO: improve this..
+                # TODO: find real exception
                 sys.exit("ERROR reading json file:\n{}".format(e))
             
             fe = fg.add_entry()
@@ -81,7 +82,7 @@ def generate_channel_rss(storage_dir, ip):
             fe.enclosure("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename), 0, "audio/mpeg")
             fe.podcast.itunes_image("http://{ip}/feed/{channel}/{base_jpg_filename}".format(ip = ip, channel = channel, base_jpg_filename = base_jpg_filename))
 
-        rss_filename = "{storage_dir}/feed.rss".format(storage_dir = storage_dir)
+        rss_filename = os.path.join(storage_dir, "feed.rss")
         try:
             fg.rss_file(rss_filename)
         except IOError as ioe:

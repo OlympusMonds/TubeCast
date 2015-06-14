@@ -48,7 +48,7 @@ def download_audio(url, output_folder):
         'outtmpl': '{output_folder}/%(id)s - %(title)s.%(ext)s'.format(output_folder=output_folder),
         'writeinfojson': True,
         'writethumbnail': True,
-        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder = output_folder)
+        'download_archive': '{output_folder}/downloaded_videos.txt'.format(output_folder=output_folder)
         }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
