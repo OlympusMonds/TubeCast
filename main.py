@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import pkg_resources
 
 try:
@@ -73,16 +74,37 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    addarg = parser.add_argument
+
+    addarg("--no-youtube", action = "store_true", default = False,
+           help = "Skip the YouTube part of TubeCast.")
+
+    addarg("--no-rss-generating", action = "store_true", default = False,
+           help = "Don't generate any rss feeds for existing files.")
+
+    addarg("--no-hosting", action = "store_true", default = False,
+           help = "Don't host the rss files on a local server using Flask.")
+
+    parsed_args = parser.parse_args()
+    parsed_args = dict(parsed_args.__dict__)
+
+
     root_storage = "Downloads"
     host_ip_address = None
     host_port = 8080
 
     # Do the Youtube stuff
-    #for vid in read_videos_to_download():
-    #    vd = get_audio_into_storage(vid, root_storage)
+    if not parsed_args["no_youtube"]:  # TODO: double negative..? Maybe try rewording it.
+        for vid in read_videos_to_download():
+            vd = get_audio_into_storage(vid, root_storage)
 
     # Do the RSS stuff
-    feeds = generate_rss(root_storage, host_ip_address, host_port)    
+    feeds = []
+    if not parsed_args["no_rss_generating"]:
+        feeds = generate_rss(root_storage, host_ip_address, host_port)    
     
     # Do the web hosting stuff
-    start_rss_host(root_storage, feeds, host_ip_address, host_port)
+    if not parsed_args["no_hosting"]:
+        start_rss_host(root_storage, feeds, host_ip_address, host_port)
+
