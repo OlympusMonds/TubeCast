@@ -45,14 +45,18 @@
 <h3>
 <a id="how-do-i-use-it" class="anchor" href="#how-do-i-use-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>How do I use it?</h3>
 
-<p>At the moment, use pip install -r requirements.txt to get the right packages, and then add the YouTube URLs to the "Videos to download.txt" file (one URL per line). Then run:
-    python main.py</p>
+<p>At the moment, use pip install -r requirements.txt to get the right packages, and then add the YouTube URLs to the "Videos to download.txt" file (one URL per line). Then run:</p>
+    
+<pre><code>
+  python main.py
+</code></pre>
 
-<p>You can also get some quick help by doing:
-    python main.py  --help
-    usage: main.py [-h] [--no-youtube] [--no-rss-generating] [--no-hosting]</p>
+<p>You can also get some quick help by doing:</p>
 
-<pre><code>optional arguments:
+<pre><code>
+  $ python main.py  --help
+  usage: main.py [-h] [--no-youtube] [--no-rss-generating] [--no-hosting]
+  optional arguments:
   -h, --help           show this help message and exit
   --no-youtube         Skip the YouTube part of TubeCast.
   --no-rss-generating  Don't generate any rss feeds for existing files.
