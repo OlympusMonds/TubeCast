@@ -23,11 +23,11 @@ class TubeCastRSSHost():
 
     def update_feed_paths(self):
         self.feed_paths = OrderedDict()
-        for channel in sorted(glob("{root_storage}/*".format(root_storage = self.root_storage))):
+        for channel in sorted(glob(os.path.join(self.root_storage, "*"))):
             if os.path.isdir(channel):
-                if os.path.isfile("{channel}/feed.rss".format(channel = channel)):
+                if os.path.isfile(os.path.join(channel, "feed.rss")):
                     pretty_channel = os.path.basename(channel)
-                    self.feed_paths[pretty_channel] = "{channel}/feed.rss".format(channel = channel)
+                    self.feed_paths[pretty_channel] = os.path.join(channel, "feed.rss")
 
     @property
     def feeds(self):
@@ -41,7 +41,7 @@ def get_file(feedname, filename):
     root_storage = tch_flask.config["root_storage"]
     if feedname in feed_names.keys():
         if filename.endswith(("jpg", "mp3")):
-            return send_from_directory("{root_storage}/{channel}".format(root_storage=root_storage, channel=feedname), filename)
+            return send_from_directory(os.path.join(root_storage, feedname), filename)
     return redirect(url_for("show_feeds"))
 
 
@@ -68,14 +68,15 @@ def show_feeds():
     feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
     text = ["Channel feeds available:",]
     for channel, feed_url in feed_paths.iteritems():
-        text.append("<a href=\"/feed/{feed_url}\">  - {channel}  </a>".format(feed_url = channel, channel = channel))
+        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a>".format(channel = channel))
     text.append("<a href=\"/feeds/update\">Update feeds</a>")
     return "<br \>".join(text)
                   
 
-def start_rss_host(root_storage, feed_paths):
-    tch_flask.debug = True
+def start_rss_host(root_storage, feed_paths, host_ip_address, host_port):
+    tch_flask.debug = False
     tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
     tch_flask.config["root_storage"] = root_storage
 
-    tch_flask.run(host='0.0.0.0')
+    tch_flask.run(host='0.0.0.0', port=host_port)
+

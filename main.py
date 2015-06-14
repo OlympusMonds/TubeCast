@@ -74,13 +74,15 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
 if __name__ == "__main__":
 
     root_storage = "Downloads"
+    host_ip_address = None
+    host_port = 8080
 
     # Do the Youtube stuff
-    for vid in read_videos_to_download():
-        vd = get_audio_into_storage(vid, root_storage)
+    #for vid in read_videos_to_download():
+    #    vd = get_audio_into_storage(vid, root_storage)
 
     # Do the RSS stuff
-    feeds = generate_rss(root_storage)    
+    feeds = generate_rss(root_storage, host_ip_address, host_port)    
     
     # Do the web hosting stuff
-    start_rss_host(root_storage, feeds)
+    start_rss_host(root_storage, feeds, host_ip_address, host_port)
