@@ -5,7 +5,7 @@ Sometimes you don't have time to sit down and watch a long YouTube video of a mo
 
 TubeCast allows you to download YouTube videos onto your local computer, and then host them as a podcast RSS feed. You can use any podcast app on your phone (with all its bells-and-whistles) to copy the audio or videos from your computer. So long as your computer and phone are on the same network, there will be no data usage. Then you can consume the media you want when you can!
 
-* "Limited to podcasting" is a misnomer, because podcasts are great!
+*"Limited to podcasting" is a misnomer, because podcasts are great!
 
 ## Important Note ##
 This program no way intends to stop content creators receiving payment via ads (or whatever). While perhaps naive, the intent is to be able to consume their content in a more convienient way for those who either get motion-sickness on public transport, or can't afford the data costs of mobile YouTube.
