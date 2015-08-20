@@ -7,7 +7,7 @@ from youtube_dl import DownloadError
 def get_video_info(url):
     """
     Uses the YoutubeDL library to download only video info (not the vid itself).
-    Accepts vids or playlists. Videos return a different dict to playlists, so 
+    Accepts vids or playlists. Videos return a different dict to playlists, so
     it"s normalised a bit here
     """
     try:
@@ -19,7 +19,7 @@ def get_video_info(url):
         return []
 
     try:
-        videos = vid_data["entries"]  
+        videos = vid_data["entries"]
         # This assumes that "entries" is a surefire to way to know if we have a playlist or not.
         # Could also use "=PL" in url?
     except KeyError:
@@ -28,7 +28,7 @@ def get_video_info(url):
     return videos
 
 
-def download_audio(url, output_folder):
+def download_media(url, output_folder, audio_only = True):
     """
     Uses the YouTubeDL library to actually download the vid and convert
     to mp3. Output naming format is defined here, and cache name.
@@ -42,22 +42,23 @@ def download_audio(url, output_folder):
 
     ydl_opts = {
         "format": "bestaudio/best",
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",
-            }],
         "progress_hooks": [my_hook],
         "outtmpl": "{}".format(video_folder),
         "writeinfojson": True,
         "writethumbnail": True,
         "download_archive": os.path.join(output_folder, "downloaded_videos.txt"),
+        #"listformats": True,
         }
+    if audio_only:
+        ydl_opts["postprocessors"] = [{"key": "FFmpegExtractAudio",
+                                       "preferredcodec": "mp3",
+                                       "preferredquality": "192",}]
+    else:
+        ydl_opts["keepvideo"] = True
+        ydl_opts["format"] = "best"
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         try:
             ydl.download([url])
         except DownloadError as dle:
             print "ERROR - Unable to download mp3 - skipping.\n{dle}".format(dle = dle)
-
-

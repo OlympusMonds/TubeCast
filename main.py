@@ -10,7 +10,7 @@ try:
 except pkg_resources.DistributionNotFound as dnfe:
     sys.exit("ERROR - You need the python package '{package}' to use TubeCast.".format(package = dnfe))
 
-from tubecast_youtube import get_video_info, download_audio
+from tubecast_youtube import get_video_info, download_media
 from tubecast_rss import generate_rss
 from tubecast_host import start_rss_host
 
@@ -43,7 +43,7 @@ def make_folder_if_not_there(path):
             sys.exit("ERROR: {}".format(ose))
 
 
-def get_audio_into_storage(url, root_storage = "Downloads"):
+def get_media_into_storage(url, root_storage = "Downloads", audio_only = True):
     """
     The main function to get audo from YT. Takes a YT URL (that YoutubeDL would accept), and
     a download location. This function then gets the info about the vid, makes an appropriate
@@ -53,7 +53,7 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
 
     if len(videos) < 1:
         return
-    
+
     # Initialise storage
     make_folder_if_not_there(root_storage)
     channel_folder = "{id}".format(id = videos[0]["uploader_id"])
@@ -61,15 +61,16 @@ def get_audio_into_storage(url, root_storage = "Downloads"):
     make_folder_if_not_there(storage_dir)
 
     for vid in videos:
-        download_audio("https://www.youtube.com/watch?v={}".format(vid["id"]), storage_dir) 
-    
+        download_media("https://www.youtube.com/watch?v={}".format(vid["id"]), storage_dir, audio_only = audio_only)
+
     """
     TODO:
     Think if download_audio should be 1 level less indented. If so, ytdl would handle the seperate
     video downloads automatically - but what if it's a custom playlist, with multiple channels?
-    Then all vids would be put into the same folder. If it IS indented, it will put each vid into 
+    Then all vids would be put into the same folder. If it IS indented, it will put each vid into
     it's own channel folder. Is that what you want..? Should this be an option?
     """
+
 
 
 if __name__ == "__main__":
@@ -86,6 +87,9 @@ if __name__ == "__main__":
     addarg("--no-hosting", action = "store_true", default = False,
            help = "Don't host the rss files on a local server using Flask.")
 
+    addarg("--get-video", action = "store_true", default = False,
+           help = "Download video, not mp3.")
+
     parsed_args = parser.parse_args()
     parsed_args = dict(parsed_args.__dict__)
 
@@ -94,17 +98,18 @@ if __name__ == "__main__":
     host_ip_address = None
     host_port = 8080
 
+    audio_only = False if parsed_args["get_video"] else True
+    
     # Do the Youtube stuff
     if not parsed_args["no_youtube"]:  # TODO: double negative..? Maybe try rewording it.
         for vid in read_videos_to_download():
-            vd = get_audio_into_storage(vid, root_storage)
+            vd = get_media_into_storage(vid, root_storage, audio_only = audio_only)
 
     # Do the RSS stuff
     feeds = []
     if not parsed_args["no_rss_generating"]:
-        feeds = generate_rss(root_storage, host_ip_address, host_port)    
-    
+        feeds = generate_rss(root_storage, host_ip_address, host_port)
+
     # Do the web hosting stuff
     if not parsed_args["no_hosting"]:
         start_rss_host(root_storage, feeds, host_ip_address, host_port)
-

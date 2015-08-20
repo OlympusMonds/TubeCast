@@ -13,10 +13,10 @@ class TubeCastRSSHost():
     """
     This class is designed to be a persistent in-memory db of all
     rss feeds available. When it starts up, you can pass it a list
-    of feeds, but if needed it can update by scanning the file 
+    of feeds, but if needed it can update by scanning the file
     structure.
     """
-    
+
     def __init__(self, root_storage, feed_paths):
         self.feed_paths = feed_paths
         self.root_storage = root_storage
@@ -40,8 +40,9 @@ def get_file(feedname, filename):
     feed_names = tch_flask.config["TubeCastRSSHost"].feeds
     root_storage = tch_flask.config["root_storage"]
     if feedname in feed_names.keys():
-        if filename.endswith(("jpg", "mp3")):
+        if filename.endswith(("jpg", "mp3", "mp4")):
             return send_from_directory(os.path.join(root_storage, feedname), filename)
+        # TODO: put in error here
     return redirect(url_for("show_feeds"))
 
 
@@ -68,10 +69,10 @@ def show_feeds():
     feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
     text = ["Channel feeds available:",]
     for channel, feed_url in feed_paths.iteritems():
-        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a>".format(channel = channel))
+        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a> - type in to your podcast app: {url}".format(channel = channel, url = feed_url))
     text.append("<a href=\"/feeds/update\">Update feeds</a>")
     return "<br \>".join(text)
-                  
+
 
 def start_rss_host(root_storage, feed_paths, host_ip_address, host_port):
     tch_flask.debug = False
@@ -79,4 +80,3 @@ def start_rss_host(root_storage, feed_paths, host_ip_address, host_port):
     tch_flask.config["root_storage"] = root_storage
 
     tch_flask.run(host='0.0.0.0', port=host_port)
-

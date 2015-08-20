@@ -25,13 +25,13 @@ def generate_rss(root_storage, host_ip_address = None, host_port = 8080):
     """
     ip = get_local_ip() if host_ip_address is None else host_ip_address
     ip = "{ip}:{port}".format(ip=ip, port=host_port)
-    
+
     channels = sorted(glob(os.path.join(root_storage, "*")))
     feeds = [generate_channel_rss(channel, ip) for channel in channels if os.path.isdir(channel)]
-    
+
     nice_feeds = OrderedDict()
     for pretty_channel, feed_url in zip(channels, feeds):
-        nice_feeds[os.path.basename(pretty_channel)] = feed_url 
+        nice_feeds[os.path.basename(pretty_channel)] = feed_url
 
     return nice_feeds
 
@@ -45,10 +45,10 @@ def generate_channel_rss(storage_dir, ip):
     # TODO: Check if pickled object is already around
 
     channel = os.path.basename(storage_dir)
-    extension_to_find = ".mp3"
-    mp3_files = glob(os.path.join(storage_dir, "*{}".format(extension_to_find)))
+    extension_to_find = ".mp*"
+    mp_files = glob(os.path.join(storage_dir, "*{}".format(extension_to_find)))
 
-    if len(mp3_files) < 1:
+    if len(mp_files) < 1:
         print "Skipping channel {channel} - no mp3s found.".format(channel = channel)
         return ""
     else:
@@ -62,11 +62,17 @@ def generate_channel_rss(storage_dir, ip):
         fg.subtitle('This is a cool feed!')
         fg.link( href='http://{ip}/feed/{channel}/feed.rss'.format(ip = ip, channel = channel), rel='self' )
         fg.language('en')
-        
-        for mp3 in mp3_files:
-            filename_without_ext = os.path.splitext(mp3)[0]
-            base_mp3_filename = os.path.basename(mp3).replace(" ", "%20")
-            base_jpg_filename = os.path.basename(mp3.replace(".mp3", ".jpg"))
+
+        have_mp3, have_mp4 = False, False
+        for mp in mp_files:
+            filename_without_ext = os.path.splitext(mp)[0]
+            base_mp_filename = os.path.basename(mp).replace(" ", "%20")
+            if mp.endswith("mp3"):
+                have_mp3 = True
+                base_jpg_filename = os.path.basename(mp.replace(".mp3", ".jpg"))
+            elif mp.endswith("mp4"):
+                have_mp4 = True
+                base_jpg_filename = os.path.basename(mp.replace(".mp4", ".jpg"))
 
             try:
                 with open("{filename}.info.json".format(filename = filename_without_ext)) as info:
@@ -74,12 +80,15 @@ def generate_channel_rss(storage_dir, ip):
             except Exception as e:
                 # TODO: find real exception
                 sys.exit("ERROR reading json file:\n{}".format(e))
-            
+
             fe = fg.add_entry()
-            fe.id("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename))
+            fe.id("http://{ip}/feed/{channel}/{mp}".format(ip = ip, channel = channel, mp = base_mp_filename))
             fe.title(vid_data["fulltitle"])
             fe.description(vid_data["description"])
-            fe.enclosure("http://{ip}/feed/{channel}/{mp3}".format(ip = ip, channel = channel, mp3 = base_mp3_filename), 0, "audio/mpeg")
+            if have_mp3:
+                fe.enclosure("http://{ip}/feed/{channel}/{mp}".format(ip = ip, channel = channel, mp = base_mp_filename), 0, "audio/mpeg")
+            elif have_mp4:
+                fe.enclosure("http://{ip}/feed/{channel}/{mp}".format(ip = ip, channel = channel, mp = base_mp_filename), 0, "video/mp4")
             fe.podcast.itunes_image("http://{ip}/feed/{channel}/{base_jpg_filename}".format(ip = ip, channel = channel, base_jpg_filename = base_jpg_filename))
 
         rss_filename = os.path.join(storage_dir, "feed.rss")
@@ -93,4 +102,3 @@ def generate_channel_rss(storage_dir, ip):
 
         # TODO: Also pickle this object? May be able to just add?
         return rss_filename
-
