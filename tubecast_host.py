@@ -24,6 +24,9 @@ class TubeCastRSSHost():
     def update_feed_paths(self):
         self.feed_paths = OrderedDict()
         for channel in sorted(glob(os.path.join(self.root_storage, "*"))):
+            if channel.endswith(".rss"):
+                # This is kinda a hack
+                self.feed_paths["AllMedia"] = channel
             if os.path.isdir(channel):
                 if os.path.isfile(os.path.join(channel, "feed.rss")):
                     pretty_channel = os.path.basename(channel)

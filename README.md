@@ -29,8 +29,8 @@ Another perfect example of the advantage of de-coupling is if the user has their
 
 
 # TODO
- - Allow users to TubeCast the full video too (not just audio). This should not be the default.
  - Add more CLI args (download location, storage location). Perhaps look at saving a config file.
  - Youtube-dl does have a flag for downloading ads too. Experiment with this.
+ - Need to be able to abstract away from direct IP, as people's IP addresses change with DHCP. Can I find a DNS or localname to be used on the network?
 
 [![Code Issues](http://www.quantifiedcode.com/api/v1/project/c52e5b9ea3c84088836765c076a196f6/badge.svg)](http://www.quantifiedcode.com/app/project/c52e5b9ea3c84088836765c076a196f6)
