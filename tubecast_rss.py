@@ -41,7 +41,9 @@ def generate_rss(root_storage, host_ip_address = None, host_port = 8080):
 
     nice_feeds = OrderedDict()
     for pretty_channel, feed_url in zip(channels, feeds):
-        nice_feeds[os.path.basename(pretty_channel)] = feed_url
+        if feed_url:
+            # TODO: This is to catch when a folder has no rss in it. Fix better.
+            nice_feeds[os.path.basename(pretty_channel)] = feed_url
 
     return nice_feeds
 
@@ -68,7 +70,8 @@ def generate_rss_feed_from_media(media_to_rss, ip, root_dir, channel = None):
     if channel is None:
         channel = "AllMedia"
         global_channel = True
-
+    else:
+        channel = os.path.split(channel)[1]
 
     fg = FeedGenerator()
     fg.load_extension("podcast")
@@ -83,7 +86,6 @@ def generate_rss_feed_from_media(media_to_rss, ip, root_dir, channel = None):
 
     for media_file in media_to_rss:
         media_file_basename = os.path.basename(media_file)
-        channel_dir = os.path.split(os.path.dirname(media_file))[1]  # Oh god, the worst!
         filepath_without_ext = os.path.splitext(media_file)[0]
         filename_without_ext = os.path.splitext(media_file_basename)[0]
         url_safe_filename = media_file_basename.replace(" ", "%20")
@@ -98,9 +100,6 @@ def generate_rss_feed_from_media(media_to_rss, ip, root_dir, channel = None):
             # TODO: find real exception
             sys.exit("ERROR reading json file:\n{}".format(e))
 
-        if global_channel:
-            channel = channel_dir
-
         fe = fg.add_entry()
         fe.id("http://{ip}/feed/{channel}/{mp}".format(ip = ip, channel = channel, mp = url_safe_filename))
         fe.title(vid_data["fulltitle"])
@@ -114,7 +113,7 @@ def generate_rss_feed_from_media(media_to_rss, ip, root_dir, channel = None):
     if global_channel:
         rss_filename = os.path.join(root_dir, "feed.rss")
     else:
-        rss_filename = os.path.join(channel, "feed.rss")
+        rss_filename = os.path.join(os.path.join(root_dir, channel), "feed.rss")
 
     try:
         fg.rss_file(rss_filename)

@@ -24,13 +24,11 @@ class TubeCastRSSHost():
     def update_feed_paths(self):
         self.feed_paths = OrderedDict()
         for channel in sorted(glob(os.path.join(self.root_storage, "*"))):
-            if channel.endswith(".rss"):
-                # This is kinda a hack
-                self.feed_paths["AllMedia"] = channel
             if os.path.isdir(channel):
                 if os.path.isfile(os.path.join(channel, "feed.rss")):
                     pretty_channel = os.path.basename(channel)
                     self.feed_paths[pretty_channel] = os.path.join(channel, "feed.rss")
+        self.feed_paths["AllMedia"] = os.path.join(self.root_storage, "feed.rss")
 
     @property
     def feeds(self):
@@ -42,9 +40,8 @@ class TubeCastRSSHost():
 def get_file(feedname, filename):
     feed_names = tch_flask.config["TubeCastRSSHost"].feeds
     root_storage = tch_flask.config["root_storage"]
-    if feedname in feed_names.keys():
-        if filename.endswith(("jpg", "mp3", "mp4")):
-            return send_from_directory(os.path.join(root_storage, feedname), filename)
+    if feedname in feed_names.keys() and filename.endswith(("jpg", "mp3", "mp4")):
+        return send_from_directory(os.path.join(root_storage, feedname), filename)
         # TODO: put in error here
     return redirect(url_for("show_feeds"))
 
@@ -70,10 +67,12 @@ def show_feeds():
     list on a page
     """
     feed_paths = tch_flask.config["TubeCastRSSHost"].feeds
-    text = ["Channel feeds available:",]
+    text = ["<h2>Channel feeds available:</h2>", ]
     for channel, feed_url in feed_paths.iteritems():
-        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a> - type in to your podcast app: {url}".format(channel = channel, url = feed_url))
-    text.append("<a href=\"/feeds/update\">Update feeds</a>")
+        text.append("<a href=\"/feed/{channel}\">  - {channel}  </a>".format(channel = channel, url = feed_url))
+        if channel == "AllMedia":
+            text[-1] = "<p>{} - Use this feed to get all media content.</p>".format(text[-1])
+    text.append("<p><a href=\"/feeds/update\">Update feeds</a></p>")
     return "<br \>".join(text)
 
 
@@ -81,5 +80,5 @@ def start_rss_host(root_storage, feed_paths, host_ip_address, host_port):
     tch_flask.debug = False
     tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
     tch_flask.config["root_storage"] = root_storage
-
-    tch_flask.run(host='0.0.0.0', port=host_port)
+    ip = '0.0.0.0' if host_ip_address is None else host_ip_address
+    tch_flask.run(host=ip, port=host_port)

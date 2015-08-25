@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import pkg_resources
+import socket
 
 try:
     pkg_resources.get_distribution("youtube_dl")
@@ -93,9 +94,8 @@ if __name__ == "__main__":
     parsed_args = parser.parse_args()
     parsed_args = dict(parsed_args.__dict__)
 
-
     root_storage = "Downloads"
-    host_ip_address = None
+    host_ip_address = socket.getfqdn()
     host_port = 8080
 
     audio_only = False if parsed_args["get_video"] else True
