@@ -80,5 +80,4 @@ def start_rss_host(root_storage, feed_paths, host_ip_address, host_port):
     tch_flask.debug = False
     tch_flask.config["TubeCastRSSHost"] = TubeCastRSSHost(root_storage, feed_paths)
     tch_flask.config["root_storage"] = root_storage
-    ip = '0.0.0.0' if host_ip_address is None else host_ip_address
-    tch_flask.run(host=ip, port=host_port)
+    tch_flask.run(host=host_ip_address, port=host_port)

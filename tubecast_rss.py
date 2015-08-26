@@ -8,23 +8,11 @@ import socket
 from feedgen.feed import FeedGenerator
 
 
-def get_local_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("gmail.com",80))
-        ip = s.getsockname()[0]
-        s.close()
-    except Exception as e:  # TODO find better exception
-        sys.exit(e)
-    return ip
-
-
-def generate_rss(root_storage, host_ip_address = None, host_port = 8080):
+def generate_rss(root_storage, host_ip_address, host_port = 8080):
     """
     Check the root storage folder for channels, and make RSS feeds for all of them
     """
-    ip = get_local_ip() if host_ip_address is None else host_ip_address
-    ip = "{ip}:{port}".format(ip=ip, port=host_port)
+    ip = "{ip}:{port}".format(ip=host_ip_address, port=host_port)
 
     channels = [ folder for folder in sorted(glob(os.path.join(root_storage, "*"))) if os.path.isdir(folder) ]
     

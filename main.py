@@ -16,6 +16,30 @@ from tubecast_rss import generate_rss
 from tubecast_host import start_rss_host
 
 
+def get_local_ip():
+    try:
+        # This is a pretty big hack...
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("gmail.com",80))
+        ip = s.getsockname()[0]
+        s.close()
+    except Exception as e:  # TODO find better exception
+        print "ERROR - Could not find local IP address. Computer says: ", e
+        return "0.0.0.0"
+    return ip
+
+
+def make_folder_if_not_there(path):
+    """
+    Attempts to make a folder if one is not already there
+    """
+    try:
+        os.mkdir(path)
+    except OSError as ose:
+        if ose.errno != 17:  # If the error is not "File already exists"
+            sys.exit("ERROR: {}".format(ose))
+
+
 def read_videos_to_download(filename = "Videos to download.txt"):
     """
     Reads a simple text file with a list of YT urls to videos OR playlists.
@@ -31,17 +55,6 @@ def read_videos_to_download(filename = "Videos to download.txt"):
         sys.exit("ERROR reading {filename} to find videos to download:\n{ioe}".format(filename = filename,
                                                                                       ioe = ioe))
     return vids_to_dl
-
-
-def make_folder_if_not_there(path):
-    """
-    Attempts to make a folder if one is not already there
-    """
-    try:
-        os.mkdir(path)
-    except OSError as ose:
-        if ose.errno != 17:  # If the error is not "File already exists"
-            sys.exit("ERROR: {}".format(ose))
 
 
 def get_media_into_storage(url, root_storage = "Downloads", audio_only = True):
@@ -91,11 +104,15 @@ if __name__ == "__main__":
     addarg("--get-video", action = "store_true", default = False,
            help = "Download video, not mp3.")
 
+    addarg("--use-ip-address", action = "store_true", default = False,
+           help = ("If you are on a big network, sometimes a local name isn't enough. IP is OK,"
+                   " but very static. Use this if you can't find the URL from your phone."))
+
     parsed_args = parser.parse_args()
     parsed_args = dict(parsed_args.__dict__)
 
     root_storage = "Downloads"
-    host_ip_address = socket.getfqdn()
+    host_ip_address = get_local_ip() if parsed_args["use_ip_address"] else socket.getfqdn()
     host_port = 8080
 
     audio_only = False if parsed_args["get_video"] else True
