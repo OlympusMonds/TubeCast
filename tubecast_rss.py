@@ -77,6 +77,9 @@ def generate_rss_feed_from_media(media_to_rss, ip, root_dir, channel = None):
         filepath_without_ext = os.path.splitext(media_file)[0]
         filename_without_ext = os.path.splitext(media_file_basename)[0]
         url_safe_filename = media_file_basename.replace(" ", "%20")
+        channel_dir = os.path.split(os.path.dirname(media_file))[1]  # Oh god, the worst!
+        if global_channel:
+            channel = channel_dir
 
         jpeg_filename = "{}.jpg".format(filename_without_ext)
         json_filename = "{}.info.json".format(filepath_without_ext)
